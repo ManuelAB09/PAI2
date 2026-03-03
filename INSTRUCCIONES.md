@@ -40,24 +40,24 @@ keytool -list -keystore cliente_truststore.jks -storepass cambiame
 
 ## 2. Compilación
 
-Compilar todos los ficheros Java incluyendo el driver SQLite en el classpath:
+Compilar todos los ficheros Java incluyendo el driver SQLite en el classpath. Los archivos `.class` se generan en la carpeta `classes/`:
 
 ### Windows (cmd)
 
 ```cmd
-javac -cp ".;sqlite-jdbc-3.47.2.0.jar" *.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" *.java
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-javac -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java ServidorSSL.java ClienteSSL.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java ServidorSSL.java ClienteSSL.java
 ```
 
 ### Linux / macOS
 
 ```bash
-javac -cp ".:sqlite-jdbc-3.47.2.0.jar" *.java
+javac -d classes -cp ".:sqlite-jdbc-3.47.2.0.jar" *.java
 ```
 
 ---
@@ -69,13 +69,13 @@ Abrir una terminal y ejecutar:
 ### Windows
 
 ```cmd
-java -cp ".;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
 ```
 
 ### Linux / macOS
 
 ```bash
-java -cp ".:sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
+java -cp "classes:sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
 ```
 
 ---
@@ -87,13 +87,13 @@ Abrir **otra** terminal y ejecutar:
 ### Windows
 
 ```cmd
-java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
+java -cp "classes" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
 ```
 
 ### Linux / macOS
 
 ```bash
-java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
+java -cp "classes" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
 ```
 
 ---

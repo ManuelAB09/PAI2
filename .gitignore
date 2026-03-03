@@ -1,5 +1,5 @@
 # === Archivos compilados ===
-*.class
+classes/
 
 # === Bases de datos generadas en ejecución ===
 vpn_ssl.db
@@ -14,7 +14,6 @@ mitm_cert.pem
 mitm_key.pem
 
 # === Dependencias (descargar con instrucciones) ===
-sqlite-jdbc-*.jar
 lib/
 
 # === IDE y sistema ===

@@ -44,6 +44,11 @@ public class BaseDatos {
      * También ejecuta la verificación de integridad HMAC.
      */
     public void inicializar() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Driver SQLite no encontrado. Asegúrate de incluir sqlite-jdbc en el classpath.", e);
+        }
         try (Connection conn = obtenerConexion()) {
             crearTablas(conn);
             cargarUsuariosIniciales(conn);

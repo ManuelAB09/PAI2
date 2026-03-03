@@ -16,13 +16,13 @@ import javax.net.ssl.*;
  * lanzar estos tests.
  * 
  * Compilación:
- * javac -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test/TestFuncionalSSL.java
+ * javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test/TestFuncionalSSL.java
  * 
  * Ejecución:
  * java -Djavax.net.ssl.trustStore=cliente_truststore.jks
  * -Djavax.net.ssl.trustStorePassword=cambiame
  * -jar lib/junit-platform-console-standalone-1.10.2.jar
- * -cp ".;sqlite-jdbc-3.47.2.0.jar;test"
+ * -cp "classes;sqlite-jdbc-3.47.2.0.jar"
  * --select-class=TestFuncionalSSL
  * 
  * @author Manuel

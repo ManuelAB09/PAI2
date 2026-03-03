@@ -9,13 +9,13 @@ Instrucciones paso a paso para ejecutar todas las pruebas: funcionales (JUnit 5)
 ### Compilar
 
 ```cmd
-javac -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test\TestFuncionalSSL.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test\TestFuncionalSSL.java
 ```
 
 ### Ejecutar (requiere servidor activo)
 
 ```cmd
-java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame -jar lib\junit-platform-console-standalone-1.10.2.jar -cp ".;sqlite-jdbc-3.47.2.0.jar;test" --select-class=TestFuncionalSSL
+java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame -jar lib\junit-platform-console-standalone-1.10.2.jar -cp "classes;sqlite-jdbc-3.47.2.0.jar" --select-class=TestFuncionalSSL
 ```
 
 ### Tests incluidos
@@ -45,13 +45,13 @@ java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStor
 ### Compilar
 
 ```cmd
-javac -cp ".;sqlite-jdbc-3.47.2.0.jar" PruebaRendimiento.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" PruebaRendimiento.java
 ```
 
 ### Ejecutar (requiere servidor activo)
 
 ```cmd
-java -cp ".;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame PruebaRendimiento
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame PruebaRendimiento
 ```
 
 ### Métricas reportadas
@@ -167,14 +167,14 @@ El ataque demuestra que un atacante que intercepta la comunicación entre client
 #### Paso 1: Arrancar el servidor real
 
 ```cmd
-java -cp ".;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
 ```
 
 #### Paso 2: Compilar y arrancar el proxy MitM (terminal 2)
 
 ```cmd
-javac PruebaMitM.java ClienteSSLMitM.java
-java PruebaMitM
+javac -d classes PruebaMitM.java ClienteSSLMitM.java
+java -cp classes PruebaMitM
 ```
 
 Esto:
@@ -185,7 +185,7 @@ Esto:
 #### Paso 3: Ejecutar el cliente MitM (terminal 3)
 
 ```cmd
-java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSLMitM
+java -cp classes -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSLMitM
 ```
 
 #### Resultado esperado
