@@ -1,0 +1,30 @@
+# === Archivos compilados ===
+*.class
+
+# === Bases de datos generadas en ejecución ===
+vpn_ssl.db
+
+# === Claves y certificados de seguridad (NUNCA subir) ===
+*.jks
+*.cer
+*.pem
+hmac.key
+mitm_keystore_temp.jks
+mitm_cert.pem
+mitm_key.pem
+
+# === Dependencias (descargar con instrucciones) ===
+sqlite-jdbc-*.jar
+lib/
+
+# === IDE y sistema ===
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+*~
+Thumbs.db
+.DS_Store
