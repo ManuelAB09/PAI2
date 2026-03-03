@@ -13,9 +13,6 @@ mitm_keystore_temp.jks
 mitm_cert.pem
 mitm_key.pem
 
-# === Dependencias (descargar con instrucciones) ===
-lib/
-
 # === IDE y sistema ===
 .idea/
 *.iml

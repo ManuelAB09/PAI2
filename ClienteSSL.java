@@ -91,24 +91,38 @@ public class ClienteSSL {
                         iniciarSesion(scanner, salida, entrada);
                         break;
                     case "3":
-                        enviarMensaje(scanner, salida, entrada);
+                        if (sesionActiva) {
+                            enviarMensaje(scanner, salida, entrada);
+                        } else {
+                            // Sin sesión: opción 3 = Salir
+                            ejecutando = false;
+                            System.out.println("\n[CLIENTE] Desconectando...");
+                        }
                         break;
                     case "4":
-                        verHistorial(salida, entrada);
+                        if (sesionActiva) {
+                            verHistorial(salida, entrada);
+                        } else {
+                            System.out.println("\n  Opción no válida. Intente de nuevo.\n");
+                        }
                         break;
                     case "5":
-                        cerrarSesion(salida, entrada);
+                        if (sesionActiva) {
+                            cerrarSesion(salida, entrada);
+                        } else {
+                            System.out.println("\n  Opción no válida. Intente de nuevo.\n");
+                        }
                         break;
                     case "6":
-                        // Enviar logout si hay sesión activa antes de salir
                         if (sesionActiva) {
+                            // Enviar logout antes de salir
                             cerrarSesion(salida, entrada);
                         }
                         ejecutando = false;
                         System.out.println("\n[CLIENTE] Desconectando...");
                         break;
                     default:
-                        System.out.println("\n  ⚠ Opción no válida. Intente de nuevo.\n");
+                        System.out.println("\n  Opción no válida. Intente de nuevo.\n");
                 }
             }
 
@@ -138,7 +152,7 @@ public class ClienteSSL {
      */
     private static void mostrarMenu() {
         System.out.println("╔════════════════════════════════════════════╗");
-        System.out.println("║        VPN SSL BYOD - Menú Principal      ║");
+        System.out.println("║        VPN SSL BYOD - Menú Principal       ║");
         System.out.println("╠════════════════════════════════════════════╣");
 
         if (sesionActiva) {
@@ -153,13 +167,10 @@ public class ClienteSSL {
             System.out.println("║  3. Enviar mensaje                         ║");
             System.out.println("║  4. Ver historial de mensajes              ║");
             System.out.println("║  5. Cerrar sesión                          ║");
+            System.out.println("║  6. Salir                                  ║");
         } else {
-            System.out.println("║  3. Enviar mensaje      (requiere login)   ║");
-            System.out.println("║  4. Ver historial       (requiere login)   ║");
-            System.out.println("║  5. Cerrar sesión       (requiere login)   ║");
+            System.out.println("║  3. Salir                                  ║");
         }
-
-        System.out.println("║  6. Salir                                  ║");
         System.out.println("╚════════════════════════════════════════════╝");
         System.out.print("  Seleccione opción: ");
     }
@@ -190,17 +201,17 @@ public class ClienteSSL {
 
         // Validaciones del lado del cliente
         if (username.isEmpty() || password.isEmpty()) {
-            System.out.println("  ✗ El nombre de usuario y la contraseña no pueden estar vacíos.\n");
+            System.out.println("  El nombre de usuario y la contraseña no pueden estar vacíos.\n");
             return;
         }
 
         if (username.length() < 3 || username.length() > 30) {
-            System.out.println("  ✗ El nombre de usuario debe tener entre 3 y 30 caracteres.\n");
+            System.out.println("  El nombre de usuario debe tener entre 3 y 30 caracteres.\n");
             return;
         }
 
         if (password.length() < 6) {
-            System.out.println("  ✗ La contraseña debe tener al menos 6 caracteres.\n");
+            System.out.println("  La contraseña debe tener al menos 6 caracteres.\n");
             return;
         }
 
@@ -218,7 +229,7 @@ public class ClienteSSL {
      */
     private static void iniciarSesion(Scanner scanner, PrintWriter salida, BufferedReader entrada) throws IOException {
         if (sesionActiva) {
-            System.out.println("\n  ⚠ Ya tiene una sesión activa como '" + usuarioActual + "'. Ciérrela primero.\n");
+            System.out.println("\n  Ya tiene una sesión activa como '" + usuarioActual + "'. Ciérrela primero.\n");
             return;
         }
 
@@ -230,7 +241,7 @@ public class ClienteSSL {
         String password = scanner.nextLine().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            System.out.println("  ✗ Debe proporcionar usuario y contraseña.\n");
+            System.out.println("  Debe proporcionar usuario y contraseña.\n");
             return;
         }
 
@@ -254,7 +265,7 @@ public class ClienteSSL {
      */
     private static void enviarMensaje(Scanner scanner, PrintWriter salida, BufferedReader entrada) throws IOException {
         if (!sesionActiva) {
-            System.out.println("\n  ✗ Debe iniciar sesión primero.\n");
+            System.out.println("\n  Debe iniciar sesión primero.\n");
             return;
         }
 
@@ -264,12 +275,12 @@ public class ClienteSSL {
         String texto = scanner.nextLine();
 
         if (texto.trim().isEmpty()) {
-            System.out.println("  ✗ El mensaje no puede estar vacío.\n");
+            System.out.println("  El mensaje no puede estar vacío.\n");
             return;
         }
 
         if (texto.length() > Protocolo.MAX_LONGITUD_MENSAJE) {
-            System.out.println("  ✗ El mensaje excede los " + Protocolo.MAX_LONGITUD_MENSAJE
+            System.out.println("  El mensaje excede los " + Protocolo.MAX_LONGITUD_MENSAJE
                     + " caracteres (" + texto.length() + " introducidos).\n");
             return;
         }
@@ -288,7 +299,7 @@ public class ClienteSSL {
      */
     private static void verHistorial(PrintWriter salida, BufferedReader entrada) throws IOException {
         if (!sesionActiva) {
-            System.out.println("\n  ✗ Debe iniciar sesión primero.\n");
+            System.out.println("\n  Debe iniciar sesión primero.\n");
             return;
         }
 
@@ -333,7 +344,7 @@ public class ClienteSSL {
      */
     private static void cerrarSesion(PrintWriter salida, BufferedReader entrada) throws IOException {
         if (!sesionActiva) {
-            System.out.println("\n  ✗ No hay sesión activa.\n");
+            System.out.println("\n  No hay sesión activa.\n");
             return;
         }
 
@@ -360,7 +371,7 @@ public class ClienteSSL {
      */
     private static void mostrarRespuesta(String respuesta) {
         if (respuesta == null) {
-            System.out.println("\n  ✗ Sin respuesta del servidor (conexión perdida).\n");
+            System.out.println("\n  Sin respuesta del servidor (conexión perdida).\n");
             return;
         }
 
@@ -371,9 +382,9 @@ public class ClienteSSL {
         String mensaje = partes.length >= 3 ? partes[2] : respuesta;
 
         if (tipo.equals(Protocolo.OK)) {
-            System.out.println("\n  ✓ " + mensaje + "\n");
+            System.out.println("\n  " + mensaje + "\n");
         } else if (tipo.equals(Protocolo.ERROR)) {
-            System.out.println("\n  ✗ " + mensaje + "\n");
+            System.out.println("\n  " + mensaje + "\n");
         } else {
             System.out.println("\n  [SERVIDOR] " + respuesta + "\n");
         }
