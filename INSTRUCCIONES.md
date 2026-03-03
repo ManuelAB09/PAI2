@@ -66,10 +66,16 @@ javac -d classes -cp ".:sqlite-jdbc-3.47.2.0.jar" *.java
 
 Abrir una terminal y ejecutar:
 
-### Windows
+### Windows (cmd)
 
 ```cmd
 java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
+```
+
+### Windows (PowerShell)
+
+```powershell
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.keyStore=servidor_keystore.jks" "-Djavax.net.ssl.keyStorePassword=cambiame" ServidorSSL
 ```
 
 ### Linux / macOS
@@ -84,10 +90,16 @@ java -cp "classes:sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_ke
 
 Abrir **otra** terminal y ejecutar:
 
-### Windows
+### Windows (cmd)
 
 ```cmd
 java -cp "classes" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
+```
+
+### Windows (PowerShell)
+
+```powershell
+java -cp "classes" "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" ClienteSSL
 ```
 
 ### Linux / macOS

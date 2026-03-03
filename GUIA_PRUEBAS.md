@@ -14,8 +14,16 @@ javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test\TestFuncionalSSL.ja
 
 ### Ejecutar (requiere servidor activo)
 
+**cmd:**
+
 ```cmd
 java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame -jar lib\junit-platform-console-standalone-1.10.2.jar -cp "classes;sqlite-jdbc-3.47.2.0.jar" --select-class=TestFuncionalSSL
+```
+
+**PowerShell** (flags `-D` entrecomillados):
+
+```powershell
+java "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" -jar lib\junit-platform-console-standalone-1.10.2.jar -cp "classes;sqlite-jdbc-3.47.2.0.jar" --select-class=TestFuncionalSSL
 ```
 
 ### Tests incluidos
@@ -50,8 +58,16 @@ javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" PruebaRendimiento.java
 
 ### Ejecutar (requiere servidor activo)
 
+**cmd:**
+
 ```cmd
 java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame PruebaRendimiento
+```
+
+**PowerShell:**
+
+```powershell
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" PruebaRendimiento
 ```
 
 ### Métricas reportadas
@@ -166,8 +182,16 @@ El ataque demuestra que un atacante que intercepta la comunicación entre client
 
 #### Paso 1: Arrancar el servidor real
 
+**cmd:**
+
 ```cmd
 java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_keystore.jks -Djavax.net.ssl.keyStorePassword=cambiame ServidorSSL
+```
+
+**PowerShell:**
+
+```powershell
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.keyStore=servidor_keystore.jks" "-Djavax.net.ssl.keyStorePassword=cambiame" ServidorSSL
 ```
 
 #### Paso 2: Compilar y arrancar el proxy MitM (terminal 2)
@@ -184,8 +208,16 @@ Esto:
 
 #### Paso 3: Ejecutar el cliente MitM (terminal 3)
 
+**cmd:**
+
 ```cmd
 java -cp classes -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSLMitM
+```
+
+**PowerShell:**
+
+```powershell
+java -cp classes "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" ClienteSSLMitM
 ```
 
 #### Resultado esperado
