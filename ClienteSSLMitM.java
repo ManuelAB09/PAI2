@@ -42,9 +42,9 @@ public class ClienteSSLMitM {
             socket.startHandshake();
 
             // Si llegamos aquí, algo va MAL
-            System.out.println("\n⚠️  ¡ALERTA! El handshake fue EXITOSO con el proxy atacante.");
-            System.out.println("⚠️  El TrustStore NO está configurado correctamente.");
-            System.out.println("⚠️  Un atacante podría interceptar toda la comunicación.\n");
+            System.out.println("\n ¡ALERTA! El handshake fue EXITOSO con el proxy atacante.");
+            System.out.println(" El TrustStore NO está configurado correctamente.");
+            System.out.println(" Un atacante podría interceptar toda la comunicación.\n");
 
             // Intentar enviar datos (para demostrar la intercepción)
             PrintWriter salida = new PrintWriter(

@@ -104,7 +104,7 @@ public class PruebaMitM {
                             new InputStreamReader(clienteRaw.getInputStream(), "UTF-8"));
 
                     // Si llegamos aquí, el cliente ACEPTÓ el certificado falso (MAL)
-                    System.out.println("[MitM] ⚠️  ¡ALERTA! El cliente ACEPTÓ el certificado falso.");
+                    System.out.println("[MitM]  ¡ALERTA! El cliente ACEPTÓ el certificado falso.");
                     System.out.println("[MitM] El TrustStore NO está configurado correctamente.");
 
                     String datos = entrada.readLine();
@@ -115,14 +115,14 @@ public class PruebaMitM {
                     clienteRaw.close();
 
                 } catch (SSLHandshakeException e) {
-                    System.out.println("[MitM] ✅ Handshake TLS FALLIDO (resultado esperado).");
-                    System.out.println("[MitM] ✅ El cliente Java RECHAZÓ el certificado falso.");
-                    System.out.println("[MitM] ✅ ¡El TrustStore protege contra este ataque MitM!");
+                    System.out.println("[MitM] Handshake TLS FALLIDO (resultado esperado).");
+                    System.out.println("[MitM] El cliente Java RECHAZÓ el certificado falso.");
+                    System.out.println("[MitM] ¡El TrustStore protege contra este ataque MitM!");
                     System.out.println("[MitM]    Detalle: " + e.getMessage());
 
                 } catch (IOException e) {
-                    System.out.println("[MitM] ✅ Conexión rechazada/reseteada por el cliente.");
-                    System.out.println("[MitM] ✅ ¡Protección MitM funcionando correctamente!");
+                    System.out.println("[MitM] Conexión rechazada/reseteada por el cliente.");
+                    System.out.println("[MitM] ¡Protección MitM funcionando correctamente!");
                     System.out.println("[MitM]    Detalle: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
