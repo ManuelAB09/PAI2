@@ -19,7 +19,8 @@ import javax.net.ssl.*;
  * lanzar estos tests.
  * 
  * Compilación:
- * javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test/TestFuncionalSSL.java
+ * javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*"
+ * test/TestFuncionalSSL.java
  * 
  * Ejecución:
  * java -Djavax.net.ssl.trustStore=cliente_truststore.jks
@@ -242,8 +243,8 @@ public class TestFuncionalSSL {
     // ======================== TEST 6: BRUTE-FORCE ========================
 
     @Test
-    @Order(6)
-    @DisplayName("06 - Protección brute-force: bloqueo tras 5 intentos fallidos")
+    @Order(99)
+    @DisplayName("99 - Protección brute-force: bloqueo tras 5 intentos fallidos (Ejecución Final)")
     void testBruteForceBloqueo() throws Exception {
         // Usar un usuario específico para esta prueba (no reutilizar el principal)
         String userBrute = "brutetest_" + System.currentTimeMillis();

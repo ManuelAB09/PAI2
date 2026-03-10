@@ -46,19 +46,18 @@ public class ServidorSSL {
     private static final BaseDatos baseDatos = new BaseDatos();
 
     /**
-     * Mapa de protección contra fuerza bruta.
-     * Clave: nombre de usuario
-     * Valor: int[2] donde [0] = intentos fallidos, [1] no usado (timestamp en long
-     * abajo)
+     * Mapa de protección contra fuerza bruta por IP.
+     * Clave: dirección IP del cliente
+     * Valor: int[0] = intentos fallidos
      */
-    private static final ConcurrentHashMap<String, int[]> intentosFallidos = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, int[]> intentosFallidosIP = new ConcurrentHashMap<>();
 
     /**
-     * Mapa de timestamps de bloqueo por usuario.
-     * Clave: nombre de usuario
+     * Mapa de timestamps de bloqueo por IP.
+     * Clave: dirección IP del cliente
      * Valor: timestamp (ms) del último intento fallido que causó bloqueo
      */
-    private static final ConcurrentHashMap<String, Long> timestampBloqueo = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Long> timestampBloqueoIP = new ConcurrentHashMap<>();
 
     // ======================== MAIN ========================
 
@@ -117,13 +116,13 @@ public class ServidorSSL {
     // ======================== PROTECCIÓN BRUTE-FORCE ========================
 
     /**
-     * Verifica si un usuario está bloqueado por intentos fallidos.
+     * Verifica si una IP está bloqueada por intentos fallidos.
      * 
-     * @param username Nombre de usuario a verificar
-     * @return true si el usuario está bloqueado
+     * @param ip Dirección IP a verificar
+     * @return true si la IP está bloqueada
      */
-    private static boolean estaBloqueado(String username) {
-        Long timestamp = timestampBloqueo.get(username);
+    private static boolean estaBloqueadaIP(String ip) {
+        Long timestamp = timestampBloqueoIP.get(ip);
         if (timestamp == null) {
             return false;
         }
@@ -131,8 +130,8 @@ public class ServidorSSL {
         // Verificar si el bloqueo ha expirado
         if (System.currentTimeMillis() - timestamp > Protocolo.DURACION_BLOQUEO_MS) {
             // Bloqueo expirado, resetear contadores
-            intentosFallidos.remove(username);
-            timestampBloqueo.remove(username);
+            intentosFallidosIP.remove(ip);
+            timestampBloqueoIP.remove(ip);
             return false;
         }
 
@@ -140,19 +139,19 @@ public class ServidorSSL {
     }
 
     /**
-     * Registra un intento de login fallido y activa bloqueo si es necesario.
+     * Registra un intento de login fallido y activa bloqueo por IP si es necesario.
      * 
-     * @param username Nombre de usuario
+     * @param ip Dirección IP que falla
      */
-    private static void registrarIntentoFallido(String username) {
-        int[] intentos = intentosFallidos.computeIfAbsent(username, k -> new int[] { 0 });
+    private static void registrarIntentoFallidoIP(String ip) {
+        int[] intentos = intentosFallidosIP.computeIfAbsent(ip, k -> new int[] { 0 });
         intentos[0]++;
 
-        System.out.println("[SEGURIDAD] Intento fallido #" + intentos[0] + " para usuario: " + username);
+        System.out.println("[SEGURIDAD] Intento fallido #" + intentos[0] + " desde IP: " + ip);
 
         if (intentos[0] >= Protocolo.MAX_INTENTOS_LOGIN) {
-            timestampBloqueo.put(username, System.currentTimeMillis());
-            System.out.println("[SEGURIDAD] ¡Usuario '" + username + "' BLOQUEADO por "
+            timestampBloqueoIP.put(ip, System.currentTimeMillis());
+            System.out.println("[SEGURIDAD] ¡IP '" + ip + "' BLOQUEADA por "
                     + (Protocolo.DURACION_BLOQUEO_MS / 1000) + " segundos!");
         }
     }
@@ -160,11 +159,11 @@ public class ServidorSSL {
     /**
      * Resetea el contador de intentos fallidos tras un login exitoso.
      * 
-     * @param username Nombre de usuario
+     * @param ip Dirección IP a resetear
      */
-    private static void resetearIntentos(String username) {
-        intentosFallidos.remove(username);
-        timestampBloqueo.remove(username);
+    private static void resetearIntentosIP(String ip) {
+        intentosFallidosIP.remove(ip);
+        timestampBloqueoIP.remove(ip);
     }
 
     // ======================== MANEJADOR DE CLIENTE ========================
@@ -270,6 +269,10 @@ public class ServidorSSL {
                 return Protocolo.ERROR_REGISTRO_DATOS;
             }
 
+            if (username.contains(Protocolo.DELIMITADOR) || password.contains(Protocolo.DELIMITADOR)) {
+                return "ERROR|REGISTRO|El carácter '" + Protocolo.DELIMITADOR + "' no está permitido.";
+            }
+
             if (username.length() < 3 || username.length() > 30) {
                 return "ERROR|REGISTRO|El nombre de usuario debe tener entre 3 y 30 caracteres.";
             }
@@ -306,9 +309,13 @@ public class ServidorSSL {
             String username = partes[1].trim();
             String password = partes[2].trim();
 
-            // Verificar bloqueo por fuerza bruta
-            if (estaBloqueado(username)) {
-                System.out.println("[SEGURIDAD] Intento de login en cuenta bloqueada: " + username);
+            if (username.contains(Protocolo.DELIMITADOR) || password.contains(Protocolo.DELIMITADOR)) {
+                return "ERROR|LOGIN|El carácter '" + Protocolo.DELIMITADOR + "' no está permitido.";
+            }
+
+            // Verificar bloqueo por fuerza bruta (por IP)
+            if (estaBloqueadaIP(clienteIP)) {
+                System.out.println("[SEGURIDAD] Intento de login desde IP bloqueada: " + clienteIP);
                 return Protocolo.ERROR_LOGIN_BLOQUEADO;
             }
 
@@ -317,11 +324,11 @@ public class ServidorSSL {
             if (userId > 0) {
                 usuarioActual = username;
                 usuarioIdActual = userId;
-                resetearIntentos(username);
+                resetearIntentosIP(clienteIP);
                 System.out.println("[SERVIDOR] Login exitoso: " + username + " desde " + clienteIP);
                 return Protocolo.OK_LOGIN;
             } else {
-                registrarIntentoFallido(username);
+                registrarIntentoFallidoIP(clienteIP);
                 System.out.println("[SERVIDOR] Login fallido: " + username + " desde " + clienteIP);
                 return Protocolo.ERROR_LOGIN_CRED;
             }
@@ -364,6 +371,10 @@ public class ServidorSSL {
 
             if (texto.isEmpty()) {
                 return Protocolo.ERROR_MENSAJE_VACIO;
+            }
+
+            if (texto.contains(Protocolo.DELIMITADOR)) {
+                return "ERROR|MENSAJE|El carácter '" + Protocolo.DELIMITADOR + "' no está permitido en los mensajes.";
             }
 
             if (texto.length() > Protocolo.MAX_LONGITUD_MENSAJE) {

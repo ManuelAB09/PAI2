@@ -41,12 +41,10 @@ public class ClienteSSLMitM {
             System.out.println("[CLIENTE] Iniciando handshake TLS con el proxy MitM...");
             socket.startHandshake();
 
-            // Si llegamos aquí, algo va MAL
             System.out.println("\n ¡ALERTA! El handshake fue EXITOSO con el proxy atacante.");
             System.out.println(" El TrustStore NO está configurado correctamente.");
             System.out.println(" Un atacante podría interceptar toda la comunicación.\n");
 
-            // Intentar enviar datos (para demostrar la intercepción)
             PrintWriter salida = new PrintWriter(
                     new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
             salida.println("LOGIN|admin|Admin2024!");
@@ -67,12 +65,6 @@ public class ClienteSSLMitM {
             System.out.println("\n[DETALLE] Excepción:");
             System.out.println("  Tipo: " + e.getClass().getName());
             System.out.println("  Mensaje: " + e.getMessage());
-            System.out.println("\n[EXPLICACIÓN]");
-            System.out.println("  El cliente tiene configurado cliente_truststore.jks que SOLO");
-            System.out.println("  contiene el certificado del servidor LEGÍTIMO.");
-            System.out.println("  El proxy atacante presenta un certificado diferente que NO");
-            System.out.println("  está en el truststore → Java rechaza la conexión.");
-            System.out.println("  Las credenciales NUNCA fueron enviadas al atacante.\n");
 
         } catch (java.net.ConnectException e) {
             System.out.println("[ERROR] No se pudo conectar al proxy MitM en puerto " + PUERTO_MITM);

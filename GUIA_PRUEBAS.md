@@ -277,30 +277,30 @@ java -cp classes "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.ne
 **En el cliente (terminal 3):**
 
 ```
-✅ SSLHandshakeException capturada correctamente.
-✅ El cliente RECHAZÓ el certificado falso del atacante.
-✅ El TrustStore protege contra el ataque MitM.
+SSLHandshakeException capturada correctamente.
+El cliente RECHAZÓ el certificado falso del atacante.
+El TrustStore protege contra el ataque MitM.
 ```
 
 **En el proxy MitM (terminal 2):**
 
 ```
-[MitM] ✅ Handshake FALLIDO (esperado): [SSL: CERTIFICATE_REQUIRED]
-[MitM] ✅ El cliente Java RECHAZÓ el certificado falso.
+[MitM] Handshake FALLIDO (esperado): [SSL: CERTIFICATE_REQUIRED]
+[MitM] El cliente Java RECHAZÓ el certificado falso.
 ```
 
 ### 4.3 ¿Por qué funciona la protección?
 
 ```
 ┌─────────┐         ┌──────────────┐         ┌──────────────┐
-│ Cliente  │ ──TLS──►│ Proxy MitM   │ ──TLS──►│ Servidor     │
-│ Java     │         │ (cert falso) │         │ (cert real)  │
+│ Cliente │ ──TLS──►│ Proxy MitM   │ ──TLS──►│ Servidor     │
+│ Java    │         │ (cert falso) │         │ (cert real)  │
 └─────────┘         └──────────────┘         └──────────────┘
      │                      │
      │  SSLHandshakeException!
      │  El truststore NO contiene
      │  el cert del proxy atacante.
-     │  CONEXIÓN RECHAZADA ✅
+     │  CONEXIÓN RECHAZADA
 ```
 
 1. El cliente Java solo confía en los certificados de `cliente_truststore.jks`.
@@ -314,4 +314,3 @@ Si el cliente aceptara cualquier certificado (configuración insegura con `Trust
 
 - El proxy MitM podría interceptar, leer y modificar todo el tráfico.
 - Las credenciales de login serían visibles para el atacante.
-- **Moraleja**: Nunca desactivar la verificación de certificados en producción.

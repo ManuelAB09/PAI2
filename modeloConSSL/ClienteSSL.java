@@ -205,6 +205,11 @@ public class ClienteSSL {
             return;
         }
 
+        if (username.contains(Protocolo.DELIMITADOR) || password.contains(Protocolo.DELIMITADOR)) {
+            System.out.println("  El carácter '" + Protocolo.DELIMITADOR + "' no está permitido.\n");
+            return;
+        }
+
         if (username.length() < 3 || username.length() > 30) {
             System.out.println("  El nombre de usuario debe tener entre 3 y 30 caracteres.\n");
             return;
@@ -245,6 +250,11 @@ public class ClienteSSL {
             return;
         }
 
+        if (username.contains(Protocolo.DELIMITADOR) || password.contains(Protocolo.DELIMITADOR)) {
+            System.out.println("  El carácter '" + Protocolo.DELIMITADOR + "' no está permitido.\n");
+            return;
+        }
+
         // Enviar comando al servidor
         String comando = Protocolo.LOGIN + "|" + username + "|" + password;
         salida.println(comando);
@@ -276,6 +286,11 @@ public class ClienteSSL {
 
         if (texto.trim().isEmpty()) {
             System.out.println("  El mensaje no puede estar vacío.\n");
+            return;
+        }
+
+        if (texto.contains(Protocolo.DELIMITADOR)) {
+            System.out.println("  El carácter '" + Protocolo.DELIMITADOR + "' no está permitido en los mensajes.\n");
             return;
         }
 
