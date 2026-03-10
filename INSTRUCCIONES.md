@@ -1,5 +1,29 @@
 # VPN SSL BYOD — Instrucciones de Compilación y Ejecución
 
+## Estructura del Proyecto
+
+```
+PAI2/
+├── Protocolo.java              # Constantes compartidas
+├── SeguridadUtil.java          # Utilidades de seguridad (PBKDF2, HMAC)
+├── BaseDatos.java              # Persistencia SQLite + integridad HMAC
+├── modeloConSSL/               # Modelo con TLS 1.3
+│   ├── ServidorSSL.java
+│   └── ClienteSSL.java
+├── ModeloSinSSL/               # Modelo sin cifrado (benchmark)
+│   ├── ServidorSinSSL.java
+│   └── ClienteSinSSL.java
+├── test/                       # Tests y pruebas
+│   ├── TestFuncionalSSL.java
+│   ├── PruebaRendimiento.java
+│   ├── PruebaRendimientoSinSSL.java
+│   ├── PruebaMitM.java
+│   └── ClienteSSLMitM.java
+├── lib/                        # JUnit 5 standalone
+├── logs/                       # Logs autogenerados por las pruebas
+└── sqlite-jdbc-3.47.2.0.jar
+```
+
 ## Requisitos Previos
 
 - **Java 17+** (recomendado Java 21 para soporte completo de TLS 1.3 y SHA3-256)
@@ -42,27 +66,49 @@ keytool -list -keystore cliente_truststore.jks -storepass cambiame
 
 Compilar todos los ficheros Java incluyendo el driver SQLite en el classpath. Los archivos `.class` se generan en la carpeta `classes/`:
 
-### Windows (cmd)
+### 2.1 Modelo con SSL (TLS 1.3)
+
+**Windows (cmd):**
 
 ```cmd
-javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" *.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java modeloConSSL\ServidorSSL.java modeloConSSL\ClienteSSL.java
 ```
 
-### Windows (PowerShell)
+**Windows (PowerShell):**
 
 ```powershell
-javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java ServidorSSL.java ClienteSSL.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java modeloConSSL\ServidorSSL.java modeloConSSL\ClienteSSL.java
 ```
 
-### Linux / macOS
+**Linux / macOS:**
 
 ```bash
-javac -d classes -cp ".:sqlite-jdbc-3.47.2.0.jar" *.java
+javac -d classes -cp ".:sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java modeloConSSL/*.java
+```
+
+### 2.2 Modelo sin SSL (benchmark, sin cifrado)
+
+**Windows (cmd / PowerShell):**
+
+```cmd
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java ModeloSinSSL\ServidorSinSSL.java ModeloSinSSL\ClienteSinSSL.java
+```
+
+**Linux / macOS:**
+
+```bash
+javac -d classes -cp ".:sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java ModeloSinSSL/*.java
+```
+
+### 2.3 Tests (todos en `test/`)
+
+```cmd
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test\TestFuncionalSSL.java test\PruebaRendimiento.java test\PruebaRendimientoSinSSL.java test\PruebaMitM.java test\ClienteSSLMitM.java
 ```
 
 ---
 
-## 3. Ejecución del Servidor
+## 3. Ejecución del Servidor SSL
 
 Abrir una terminal y ejecutar:
 
@@ -86,7 +132,7 @@ java -cp "classes:sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.keyStore=servidor_ke
 
 ---
 
-## 4. Ejecución del Cliente
+## 4. Ejecución del Cliente SSL
 
 Abrir **otra** terminal y ejecutar:
 
@@ -106,6 +152,26 @@ java -cp "classes" "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.
 
 ```bash
 java -cp "classes" -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSL
+```
+
+---
+
+## 4b. Ejecución del Modelo Sin SSL (benchmark)
+
+Este modelo usa sockets TCP planos (sin cifrado). No requiere keystore ni truststore.
+
+### Servidor Sin SSL
+
+```cmd
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" ServidorSinSSL
+```
+
+> El servidor sin SSL escucha en el **puerto 3080** (diferente al 3443 del SSL).
+
+### Cliente Sin SSL
+
+```cmd
+java -cp "classes" ClienteSinSSL
 ```
 
 ---
@@ -130,5 +196,17 @@ El sistema carga automáticamente los siguientes usuarios al primer arranque:
 |------------------|------------------------------------------------|
 | `vpn_ssl.db`     | Base de datos SQLite con usuarios y mensajes   |
 | `hmac.key`       | Clave HMAC para verificación de integridad     |
+| `logs/`          | Directorio con logs autogenerados por las pruebas |
 
 > **¡Importante!** No modifique ni elimine `hmac.key` salvo que desee regenerar la integridad de toda la base de datos. Si la clave cambia, los registros existentes no pasarán la verificación de integridad.
+
+---
+
+## 7. Archivos por Carpeta
+
+| Carpeta | Ficheros | Descripción |
+|---------|----------|-------------|
+| `modeloConSSL/` | `ServidorSSL.java`, `ClienteSSL.java` | Servidor y cliente con TLS 1.3 |
+| `ModeloSinSSL/` | `ServidorSinSSL.java`, `ClienteSinSSL.java` | Servidor y cliente sin cifrado (benchmark) |
+| `test/` | `TestFuncionalSSL.java`, `PruebaRendimiento.java`, `PruebaRendimientoSinSSL.java`, `PruebaMitM.java`, `ClienteSSLMitM.java` | Todos los tests y pruebas |
+| (raíz) | `Protocolo.java`, `SeguridadUtil.java`, `BaseDatos.java` | Código compartido por ambos modelos |

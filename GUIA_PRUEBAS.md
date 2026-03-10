@@ -12,7 +12,7 @@ Instrucciones paso a paso para ejecutar todas las pruebas: funcionales (JUnit 5)
 javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar;lib/*" test\TestFuncionalSSL.java
 ```
 
-### Ejecutar (requiere servidor activo)
+### Ejecutar (requiere servidor SSL activo)
 
 **cmd:**
 
@@ -25,6 +25,8 @@ java -Djavax.net.ssl.trustStore=cliente_truststore.jks -Djavax.net.ssl.trustStor
 ```powershell
 java "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" -jar lib\junit-platform-console-standalone-1.10.2.jar -cp "classes;sqlite-jdbc-3.47.2.0.jar" --select-class=TestFuncionalSSL
 ```
+
+> **Nota:** El fichero `TestFuncionalSSL.java` se encuentra en `test/`. Los resultados se guardan automáticamente en `logs/TestFuncionalSSL_<fecha>.log`.
 
 ### Tests incluidos
 
@@ -48,15 +50,15 @@ java "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustS
 
 ---
 
-## 2. Prueba de Rendimiento (300 Clientes)
+## 2. Prueba de Rendimiento CON SSL (300 Clientes)
 
 ### Compilar
 
 ```cmd
-javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" PruebaRendimiento.java
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" test\PruebaRendimiento.java
 ```
 
-### Ejecutar (requiere servidor activo)
+### Ejecutar (requiere servidor SSL activo)
 
 **cmd:**
 
@@ -70,6 +72,8 @@ java -cp "classes;sqlite-jdbc-3.47.2.0.jar" -Djavax.net.ssl.trustStore=cliente_t
 java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.trustStore=cliente_truststore.jks" "-Djavax.net.ssl.trustStorePassword=cambiame" PruebaRendimiento
 ```
 
+> Los resultados se guardan automáticamente en `logs/PruebaRendimiento_<fecha>.log`.
+
 ### Métricas reportadas
 
 - **Clientes exitosos / errores**: ¿el servidor colapsa?
@@ -81,13 +85,64 @@ java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.trustStore=cliente_
 
 Para documentar la "pérdida de rendimiento" por usar TLS:
 
-1. **Paso A** — Ejecutar `PruebaRendimiento.java` contra el servidor SSL → anotar **Media TLS**
-2. **Paso B** — Crear un `ServidorTextoPlano.java` idéntico pero usando `ServerSocket` en lugar de `SSLServerSocket` (misma lógica, sin cifrado)
-3. **Paso C** — Crear `PruebaRendimientoPlano.java` que use `Socket` en lugar de `SSLSocket`
-4. **Paso D** — Ejecutar y anotar **Media TCP**
-5. **Cálculo**: `Overhead TLS = ((Media_TLS - Media_TCP) / Media_TCP) × 100%`
+1. **Paso A** — Ejecutar `PruebaRendimiento.java` (en `test/`) contra el servidor SSL → anotar **Media TLS**
+2. **Paso B** — Ejecutar `PruebaRendimientoSinSSL.java` (en `test/`) contra `ServidorSinSSL` → anotar **Media TCP**
+3. **Cálculo**: `Overhead TLS = ((Media_TLS - Media_TCP) / Media_TCP) × 100%`
 
 > **Nota**: El overhead típico de TLS 1.3 es de 1-3 ms adicionales por handshake, gracias al 0-RTT/1-RTT de TLS 1.3. Esto supone un overhead de aproximadamente 10-30% respecto a texto plano para conexiones cortas.
+
+---
+
+## 2b. Prueba de Rendimiento SIN SSL (300 Clientes, benchmark)
+
+Esta prueba usa sockets TCP planos para medir tiempos sin el overhead de TLS.
+
+### Compilar
+
+```cmd
+javac -d classes -cp ".;sqlite-jdbc-3.47.2.0.jar" Protocolo.java SeguridadUtil.java BaseDatos.java test\PruebaRendimientoSinSSL.java ModeloSinSSL\ServidorSinSSL.java ModeloSinSSL\ClienteSinSSL.java
+```
+
+### Paso 1: Arrancar el servidor sin SSL
+
+```cmd
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" ServidorSinSSL
+```
+
+> El servidor sin SSL escucha en el **puerto 3080**. No requiere keystore.
+
+### Paso 2: Ejecutar la prueba de rendimiento sin SSL
+
+**cmd:**
+
+```cmd
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" PruebaRendimientoSinSSL
+```
+
+**PowerShell:**
+
+```powershell
+java -cp "classes;sqlite-jdbc-3.47.2.0.jar" PruebaRendimientoSinSSL
+```
+
+> No requiere truststore ni parámetros `-D`. Los resultados se guardan automáticamente en `logs/PruebaRendimientoSinSSL_<fecha>.log`.
+
+### Métricas reportadas (ambas pruebas)
+
+- **Clientes exitosos / errores**: ¿el servidor colapsa?
+- **Tiempo medio, mínimo, máximo**: latencia por cliente
+- **P95**: percentil 95 — el 95% de clientes completó en X ms
+- **Throughput**: clientes completados por segundo
+
+### Uso interactivo del modelo sin SSL
+
+También se puede probar manualmente con el cliente interactivo:
+
+```cmd
+java -cp "classes" ClienteSinSSL
+```
+
+> Funcionalidad idéntica al `ClienteSSL` pero sin cifrado. Útil para verificar que la lógica de negocio funciona aislada del TLS.
 
 ---
 
@@ -197,7 +252,7 @@ java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.keyStore=servidor_k
 #### Paso 2: Compilar y arrancar el proxy MitM (terminal 2)
 
 ```cmd
-javac -d classes PruebaMitM.java ClienteSSLMitM.java
+javac -d classes test\PruebaMitM.java test\ClienteSSLMitM.java
 java -cp classes PruebaMitM
 ```
 

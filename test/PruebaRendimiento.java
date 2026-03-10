@@ -2,6 +2,8 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.net.ssl.*;
 
 /**
@@ -112,6 +114,7 @@ public class PruebaRendimiento {
 
         // ==================== RESULTADOS ====================
         imprimirResultados(tiempoTotal, completado);
+        guardarLog(tiempoTotal, completado);
     }
 
     // ======================== FLUJO DEL CLIENTE ========================
@@ -154,7 +157,7 @@ public class PruebaRendimiento {
             String resp = entrada.readLine();
             verificar(resp, "OK", "Cliente " + id + " - Registro");
 
-            // 3. Cerrar y reconectar (simula nuevo inicio de sesión)
+            // 3. Cerrar y reconectar
             salida.close();
             entrada.close();
             socket.close();
@@ -266,23 +269,76 @@ public class PruebaRendimiento {
         // Resultado final
         System.out.println();
         if (errores.get() == 0 && completado) {
-            System.out.println("✅ PRUEBA SUPERADA: El servidor manejó " + NUM_CLIENTES
+            System.out.println(" PRUEBA SUPERADA: El servidor manejó " + NUM_CLIENTES
                     + " clientes concurrentes sin errores.");
         } else if (errores.get() > 0) {
-            System.out.println("⚠️  PRUEBA CON ADVERTENCIAS: " + errores.get() + " clientes tuvieron errores.");
+            System.out.println(" PRUEBA CON ADVERTENCIAS: " + errores.get() + " clientes tuvieron errores.");
         }
         if (!completado) {
-            System.out.println("❌ PRUEBA FALLIDA: No se completó dentro del timeout de 5 minutos.");
+            System.out.println(" PRUEBA FALLIDA: No se completó dentro del timeout de 5 minutos.");
         }
 
-        // Metodología de comparación TLS vs texto plano
-        System.out.println("\n--- METODOLOGÍA: Comparación TLS vs Texto Plano ---");
-        System.out.println("Para medir el overhead de TLS 1.3:");
-        System.out.println("  1. Ejecutar esta prueba con el servidor SSL (ya hecho).");
-        System.out.println("  2. Crear un ServidorTextoPlano.java que use ServerSocket normal (sin SSL).");
-        System.out.println("  3. Crear un cliente de rendimiento equivalente sin SSL.");
-        System.out.println("  4. Comparar: Tiempo medio TLS / Tiempo medio Texto Plano.");
-        System.out.println("  Overhead TLS = ((Media_TLS - Media_TCP) / Media_TCP) * 100%");
         System.out.printf("  Tiempo medio TLS actual: %.1f ms (este resultado) %n", media);
+    }
+
+    // ======================== LOG ========================
+
+    /**
+     * Guarda los resultados de la prueba en un fichero de log.
+     */
+    private static void guardarLog(long tiempoTotalMs, boolean completado) {
+        try {
+            new File("logs").mkdirs();
+
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+            String nombreArchivo = "logs/PruebaRendimiento_" + timestamp + ".log";
+
+            List<Long> listaTiempos = new ArrayList<>(tiempos);
+            Collections.sort(listaTiempos);
+
+            long suma = 0;
+            for (long t : listaTiempos) suma += t;
+
+            int total = listaTiempos.size();
+            long minimo = total > 0 ? listaTiempos.get(0) : 0;
+            long maximo = total > 0 ? listaTiempos.get(total - 1) : 0;
+            double media = total > 0 ? (double) suma / total : 0;
+            long p95 = total > 0 ? listaTiempos.get((int) (total * 0.95)) : 0;
+            double throughput = total > 0 ? (double) exitosos.get() / (tiempoTotalMs / 1000.0) : 0;
+
+            try (PrintWriter log = new PrintWriter(new FileWriter(nombreArchivo))) {
+                log.println("========================================");
+                log.println("  TEST: PruebaRendimiento");
+                log.println("  FECHA: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                log.println("========================================");
+                log.println();
+                log.println("RESULTADOS DE LA PRUEBA DE RENDIMIENTO");
+                log.println("---------------------------------------");
+                log.printf("Clientes lanzados:     %d%n", NUM_CLIENTES);
+                log.printf("Exitosos:              %d%n", exitosos.get());
+                log.printf("Errores:               %d%n", errores.get());
+                log.printf("Completado en timeout: %s%n", completado ? "Sí" : "No");
+                log.println();
+                log.printf("Tiempo total:          %d ms%n", tiempoTotalMs);
+                log.printf("Tiempo medio:          %.1f ms%n", media);
+                log.printf("Tiempo mínimo:         %d ms%n", minimo);
+                log.printf("Tiempo máximo:         %d ms%n", maximo);
+                log.printf("Percentil 95 (P95):    %d ms%n", p95);
+                log.printf("Throughput:            %.2f cli/s%n", throughput);
+                log.println();
+                if (errores.get() == 0 && completado) {
+                    log.println("RESULTADO: PRUEBA SUPERADA");
+                } else if (errores.get() > 0) {
+                    log.println("RESULTADO: PRUEBA CON ADVERTENCIAS (" + errores.get() + " errores)");
+                }
+                if (!completado) {
+                    log.println("RESULTADO: PRUEBA FALLIDA (timeout)");
+                }
+            }
+
+            System.out.println("\n[LOG] Resultados guardados en: " + nombreArchivo);
+        } catch (IOException e) {
+            System.err.println("[LOG] Error al guardar log: " + e.getMessage());
+        }
     }
 }

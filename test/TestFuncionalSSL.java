@@ -1,8 +1,11 @@
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.extension.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.net.ssl.*;
 
 /**
@@ -44,6 +47,56 @@ public class TestFuncionalSSL {
     /** Usuario de prueba único para evitar conflictos entre ejecuciones */
     private static final String TEST_USER = "testqa_" + System.currentTimeMillis();
     private static final String TEST_PASS = "TestPass123!";
+
+    /** Writer para el fichero de log */
+    private static PrintWriter logWriter;
+    private static String nombreLog;
+    private static int testsPasados = 0;
+    private static int testsFallidos = 0;
+
+    // ======================== LOG ========================
+
+    @BeforeAll
+    static void inicializarLog() throws IOException {
+        new File("logs").mkdirs();
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+        nombreLog = "logs/TestFuncionalSSL_" + timestamp + ".log";
+        logWriter = new PrintWriter(new FileWriter(nombreLog), true);
+        logWriter.println("========================================");
+        logWriter.println("  TEST: TestFuncionalSSL");
+        logWriter.println("  FECHA: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        logWriter.println("========================================");
+        logWriter.println();
+    }
+
+    @RegisterExtension
+    static TestWatcher watcher = new TestWatcher() {
+        @Override
+        public void testSuccessful(ExtensionContext context) {
+            testsPasados++;
+            logWriter.println("[PASSED] " + context.getDisplayName());
+        }
+
+        @Override
+        public void testFailed(ExtensionContext context, Throwable cause) {
+            testsFallidos++;
+            logWriter.println("[FAILED] " + context.getDisplayName());
+            logWriter.println("         Causa: " + cause.getMessage());
+        }
+    };
+
+    @AfterAll
+    static void cerrarLog() {
+        logWriter.println();
+        logWriter.println("========================================");
+        logWriter.println("  RESUMEN");
+        logWriter.println("========================================");
+        logWriter.println("Tests pasados:  " + testsPasados);
+        logWriter.println("Tests fallidos: " + testsFallidos);
+        logWriter.println("Total:          " + (testsPasados + testsFallidos));
+        logWriter.close();
+        System.out.println("\n[LOG] Resultados guardados en: " + nombreLog);
+    }
 
     // ======================== UTILIDADES ========================
 

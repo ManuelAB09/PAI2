@@ -24,3 +24,5 @@ mitm_key.pem
 *~
 Thumbs.db
 .DS_Store
+
+logs

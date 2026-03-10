@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.*;
 import java.security.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.net.ssl.*;
 
 /**
@@ -89,6 +91,18 @@ public class PruebaMitM {
             System.out.println("         java -Djavax.net.ssl.trustStore=cliente_truststore.jks \\");
             System.out.println("              -Djavax.net.ssl.trustStorePassword=cambiame ClienteSSLMitM\n");
 
+            // Crear fichero de log
+            new File("logs").mkdirs();
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+            String nombreLog = "logs/PruebaMitM_" + timestamp + ".log";
+            PrintWriter log = new PrintWriter(new FileWriter(nombreLog), true);
+            log.println("========================================");
+            log.println("  TEST: PruebaMitM");
+            log.println("  FECHA: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            log.println("========================================");
+            log.println();
+            System.out.println("[LOG] Registrando resultados en: " + nombreLog + "\n");
+
             int intentos = 0;
             while (true) {
                 try {
@@ -112,6 +126,7 @@ public class PruebaMitM {
                         System.out.println("[MitM] Datos interceptados: " + datos);
                     }
 
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + intentos + " desde " + clienteIP + ": ALERTA - Cliente ACEPTÓ certificado falso");
                     clienteRaw.close();
 
                 } catch (SSLHandshakeException e) {
@@ -119,11 +134,13 @@ public class PruebaMitM {
                     System.out.println("[MitM] El cliente Java RECHAZÓ el certificado falso.");
                     System.out.println("[MitM] ¡El TrustStore protege contra este ataque MitM!");
                     System.out.println("[MitM]    Detalle: " + e.getMessage());
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + (intentos + 1) + ": Handshake FALLIDO (protección MitM OK) - " + e.getMessage());
 
                 } catch (IOException e) {
                     System.out.println("[MitM] Conexión rechazada/reseteada por el cliente.");
                     System.out.println("[MitM] ¡Protección MitM funcionando correctamente!");
                     System.out.println("[MitM]    Detalle: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + (intentos + 1) + ": Conexión rechazada (protección MitM OK) - " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
 
