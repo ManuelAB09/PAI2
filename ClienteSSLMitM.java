@@ -56,7 +56,7 @@ public class ClienteSSLMitM {
 
         } catch (SSLHandshakeException e) {
             System.out.println("╔══════════════════════════════════════════════════════╗");
-            System.out.println("║   RESULTADO: PROTECCIÓN MitM ACTIVA ✅              ║");
+            System.out.println("║   RESULTADO: PROTECCIÓN MitM ACTIVA               ║");
             System.out.println("╠══════════════════════════════════════════════════════╣");
             System.out.println("║                                                      ║");
             System.out.println("║  SSLHandshakeException capturada correctamente.      ║");

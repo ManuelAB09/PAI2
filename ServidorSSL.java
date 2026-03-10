@@ -81,7 +81,7 @@ public class ServidorSSL {
         try {
             // Crear socket SSL del servidor
             SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(Protocolo.PUERTO);
+            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(Protocolo.PUERTO, 500);
 
             // Configurar protocolos y cipher suites
             serverSocket.setEnabledProtocols(PROTOCOLOS);

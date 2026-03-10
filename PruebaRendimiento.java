@@ -127,12 +127,22 @@ public class PruebaRendimiento {
         long inicio = System.currentTimeMillis();
 
         try {
-            // 1. Conectar vía TLS 1.3
+            // 1. Conectar vía TLS 1.3 (con reintentos)
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            SSLSocket socket = (SSLSocket) factory.createSocket(HOST, PUERTO);
-            socket.setEnabledProtocols(PROTOCOLOS);
-            socket.setEnabledCipherSuites(CIPHER_SUITES);
-            socket.startHandshake();
+            SSLSocket socket = null;
+            int maxReintentos = 5;
+            for (int intento = 0; intento < maxReintentos; intento++) {
+                try {
+                    socket = (SSLSocket) factory.createSocket(HOST, PUERTO);
+                    socket.setEnabledProtocols(PROTOCOLOS);
+                    socket.setEnabledCipherSuites(CIPHER_SUITES);
+                    socket.startHandshake();
+                    break;
+                } catch (java.net.ConnectException e) {
+                    if (intento == maxReintentos - 1) throw e;
+                    Thread.sleep(100 + (long)(Math.random() * 200));
+                }
+            }
 
             BufferedReader entrada = new BufferedReader(
                     new InputStreamReader(socket.getInputStream(), "UTF-8"));
@@ -149,10 +159,18 @@ public class PruebaRendimiento {
             entrada.close();
             socket.close();
 
-            socket = (SSLSocket) factory.createSocket(HOST, PUERTO);
-            socket.setEnabledProtocols(PROTOCOLOS);
-            socket.setEnabledCipherSuites(CIPHER_SUITES);
-            socket.startHandshake();
+            for (int intento = 0; intento < maxReintentos; intento++) {
+                try {
+                    socket = (SSLSocket) factory.createSocket(HOST, PUERTO);
+                    socket.setEnabledProtocols(PROTOCOLOS);
+                    socket.setEnabledCipherSuites(CIPHER_SUITES);
+                    socket.startHandshake();
+                    break;
+                } catch (java.net.ConnectException e) {
+                    if (intento == maxReintentos - 1) throw e;
+                    Thread.sleep(100 + (long)(Math.random() * 200));
+                }
+            }
 
             entrada = new BufferedReader(
                     new InputStreamReader(socket.getInputStream(), "UTF-8"));

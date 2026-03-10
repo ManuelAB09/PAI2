@@ -413,6 +413,11 @@ public class BaseDatos {
      * @throws SQLException si no se puede establecer la conexión
      */
     private Connection obtenerConexion() throws SQLException {
-        return DriverManager.getConnection(URL_BD);
+        Connection conn = DriverManager.getConnection(URL_BD);
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA journal_mode=WAL");
+            stmt.execute("PRAGMA busy_timeout=30000");
+        }
+        return conn;
     }
 }
