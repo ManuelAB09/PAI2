@@ -74,22 +74,12 @@ java -cp "classes;sqlite-jdbc-3.47.2.0.jar" "-Djavax.net.ssl.trustStore=cliente_
 
 > Los resultados se guardan automáticamente en `logs/PruebaRendimiento_<fecha>.log`.
 
-### Métricas reportadas
+### Métricas reportadas (Datos PruebaRendimiento_2026)
 
-- **Clientes exitosos / errores**: ¿el servidor colapsa?
-- **Tiempo medio, mínimo, máximo**: latencia por cliente
-- **P95**: percentil 95 — el 95% de clientes completó en X ms
-- **Throughput**: clientes completados por segundo
-
-### Metodología SSL vs Texto Plano
-
-Para documentar la "pérdida de rendimiento" por usar TLS:
-
-1. **Paso A** — Ejecutar `PruebaRendimiento.java` (en `test/`) contra el servidor SSL → anotar **Media TLS**
-2. **Paso B** — Ejecutar `PruebaRendimientoSinSSL.java` (en `test/`) contra `ServidorSinSSL` → anotar **Media TCP**
-3. **Cálculo**: `Overhead TLS = ((Media_TLS - Media_TCP) / Media_TCP) × 100%`
-
-> **Nota**: El overhead típico de TLS 1.3 es de 1-3 ms adicionales por handshake, gracias al 0-RTT/1-RTT de TLS 1.3. Esto supone un overhead de aproximadamente 10-30% respecto a texto plano para conexiones cortas.
+- **Clientes exitosos / errores**: 300 exitosos / 0 errores
+- **Tiempo medio, mínimo, máximo**: Media: 63975,5 ms, Mínimo: 46614 ms, Máximo: 73163 ms
+- **P95**: 72002 ms
+- **Throughput**: 4,08 cli/s
 
 ---
 
@@ -127,12 +117,12 @@ java -cp "classes;sqlite-jdbc-3.47.2.0.jar" PruebaRendimientoSinSSL
 
 > No requiere truststore ni parámetros `-D`. Los resultados se guardan automáticamente en `logs/PruebaRendimientoSinSSL_<fecha>.log`.
 
-### Métricas reportadas (ambas pruebas)
+### Métricas reportadas (Datos PruebaRendimientoSinSSL_2026)
 
-- **Clientes exitosos / errores**: ¿el servidor colapsa?
-- **Tiempo medio, mínimo, máximo**: latencia por cliente
-- **P95**: percentil 95 — el 95% de clientes completó en X ms
-- **Throughput**: clientes completados por segundo
+- **Clientes exitosos / errores**: 300 exitosos / 0 errores
+- **Tiempo medio, mínimo, máximo**: Media: 63170,7 ms, Mínimo: 38569 ms, Máximo: 71476 ms
+- **P95**: 70367 ms
+- **Throughput**: 4,16 cli/s
 
 ### Uso interactivo del modelo sin SSL
 
@@ -144,33 +134,37 @@ java -cp "classes" ClienteSinSSL
 
 > Funcionalidad idéntica al `ClienteSSL` pero sin cifrado. Útil para verificar que la lógica de negocio funciona aislada del TLS.
 
+--------------
+
+## Metodología SSL vs Texto Plano
+
+Cálculo de la "pérdida de rendimiento" por usar TLS comparando ambos benchmarks:
+
+1. **Paso A (Media TLS)**: 63975,5 ms
+2. **Paso B (Media sin TLS)**: 63170,7 ms
+3. **Cálculo**: `Overhead TLS = ((63975,5 - 63170,7) / 63170,7) × 100% = 1,27%`
+
+> **Conclusión**: El overhead originado por el apretón de manos TLS 1.3 y el cifrado continuo en la carga seleccionada supone aproximadamente un incremento del **1,27%** en la latencia media frente a un canje en texto plano. Que resulta irrisorió con tal de mantener la seguridad de la comunicación.
+
 ---
 
 ## 3. Análisis Criptográfico con Wireshark
 
 ### 3.1 Captura de tráfico en localhost
 
-#### Opción A: Npcap + Wireshark (recomendado en Windows)
-
-1. **Instalar Npcap** desde <https://npcap.com> con la opción "**Support loopback traffic**" marcada.
-2. **Abrir Wireshark**, seleccionar la interfaz **"Npcap Loopback Adapter"** o **"Adapter for loopback traffic capture"**.
-3. Iniciar captura y ejecutar servidor + cliente.
-
-#### Opción B: RawCap (alternativa ligera)
+#### RawCap
 
 1. Descargar **RawCap** desde <https://www.netresec.com/?page=RawCap>
-2. Ejecutar como administrador:
+2. Ejecutar el ejecutable RawCap.exe previamente instalado dando las opciones mostradas a continuación:
 
-   ```cmd
-   RawCap.exe 127.0.0.1 captura_ssl.pcap
-   ```
+![CapturaRawCap](Images/CapturaRawCap.png)
 
 3. Ejecutar servidor + cliente mientras RawCap captura.
-4. Detener con Ctrl+C y abrir `captura_ssl.pcap` en Wireshark.
+4. Detener con Ctrl+C y abrir `dumpfile.pcap` en Wireshark.
 
 ### 3.2 Filtros de Wireshark
 
-Aplicar estos filtros en la barra de filtro de Wireshark:
+A continuación se ponen los filtros que se pueden usar en la barra de filtro de Wireshark para analizar el tráfico capturado:
 
 | Filtro | Propósito |
 |---|---|
@@ -179,31 +173,39 @@ Aplicar estos filtros en la barra de filtro de Wireshark:
 | `tls.handshake` | Solo paquetes de handshake TLS |
 | `tls.handshake.type == 1` | ClientHello |
 | `tls.handshake.type == 2` | ServerHello |
-| `tls.record.content_type == 23` | Application Data (datos cifrados) |
-| `tls.handshake.extensions.supported_versions == 0x0304` | Negociación TLS 1.3 |
+| `tls.app_data` | Muestra las tramas que tienen Application Data (datos cifrados) |
 
-### 3.3 Qué buscar — Evidencias para el informe
+### 3.3 Evidencias de que TLS 1.3 funciona correctamente
 
 #### A) Negociación TLS 1.3 correcta
 
-1. Filtrar por `tls.handshake.type == 1` → Expandir **ClientHello**:
+1. A continuación se muestra como el cliente se conecta al servidor:
+
+![ClientHello](Images/ClientHello1.png)
+
+![ClientHello2](Images/ClientHello2.png)
+
+Como se puede ver en los campos del ClientHello, el cliente ha solicitado la negociación de TLS 1.3 y ha ofrecido los siguientes algoritmos de cifrado esto lo sabemos porque:
    - **Supported Versions Extension**: debe mostrar `TLS 1.3 (0x0304)`
-   - **Cipher Suites**: debe incluir `TLS_AES_256_GCM_SHA384` y/o `TLS_AES_128_GCM_SHA256`
+   - **Cipher Suites**: debe incluir `TLS_AES_256_GCM_SHA384` y `TLS_AES_128_GCM_SHA256`
 
-2. Filtrar por `tls.handshake.type == 2` → Expandir **ServerHello**:
+2. A continuación se muestra como el servidor responde al cliente:
+
+![ServerHello](Images/ServerHello.png)
+
+Como se puede ver en los campos del ServerHello, el servidor ha aceptado la negociación de TLS 1.3 y ha elegido uno de los algoritmos de cifrado esto lo sabemos porque:
    - **Supported Version**: `TLS 1.3 (0x0304)`
-   - **Cipher Suite**: `TLS_AES_256_GCM_SHA384 (0x1302)` o `TLS_AES_128_GCM_SHA256 (0x1301)`
-
-> **Captura de pantalla**: Hacer captura del ServerHello mostrando TLS 1.3 y el cipher suite.
+   - **Cipher Suite**: `TLS_AES_256_GCM_SHA384 (0x1302)`
 
 #### B) Confidencialidad — Datos cifrados
 
-1. Filtrar: `tls.record.content_type == 23 && tcp.port == 3443`
-2. Seleccionar un paquete **Application Data**.
-3. En el panel inferior (hexdump), verificar que los datos son **ininteligibles** (cifrados).
-4. **NO** debe aparecer texto plano como "LOGIN", "REGISTRO", "MENSAJE", contraseñas ni nombres de usuario.
+A continuación se muestra como el cliente envía un mensaje al servidor:
 
-> **Captura de pantalla**: Mostrar el contenido hexadecimal del Application Data cifrado.
+![AppData](Images/AppData.png)
+
+Como se puede ver en los campos, se envían datos cifrados al servidor, esto lo sabemos porque:
+   - **Opaque Type**: `Application Data (23)`
+   - **Encrypted Application Data**: `[Contenido cifrado]`
 
 #### C) Integridad — AES-GCM
 
@@ -211,16 +213,11 @@ TLS 1.3 con AES-GCM proporciona **AEAD** (Authenticated Encryption with Associat
 
 - Los datos se cifran Y se autentican con un MAC integrado.
 - Cualquier modificación en tránsito sería detectada y la conexión se cerraría.
-- **Evidencia**: Mostrar que el cipher suite negociado es `TLS_AES_256_GCM_SHA384`, que es un algoritmo AEAD.
 
-#### D) Resumen de evidencias
+A continuación se vuelve a mostrar que el algoritmo de cifrado es AES-GCM:
 
-| Propiedad | Cómo demostrarlo | Filtro Wireshark |
-|---|---|---|
-| **TLS 1.3** | ServerHello → version 0x0304 | `tls.handshake.type == 2` |
-| **Cipher Suite robusto** | ServerHello → AES-256-GCM | `tls.handshake.type == 2` |
-| **Confidencialidad** | Application Data sin texto plano | `tls.record.content_type == 23` |
-| **Integridad** | AEAD (GCM incluye autenticación) | Cipher suite info |
+![AES-GCM](Images/ServerHello.png)
+
 
 ---
 
