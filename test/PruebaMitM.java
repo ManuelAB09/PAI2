@@ -113,20 +113,25 @@ public class PruebaMitM {
                     System.out.println("\n[MitM] ¡Conexión entrante #" + intentos + " desde " + clienteIP + "!");
                     System.out.println("[MitM] Intentando handshake TLS con certificado FALSO...");
 
-                    // Intentar leer datos (el handshake ya ocurrió en accept para SSLSocket)
-                    BufferedReader entrada = new BufferedReader(
-                            new InputStreamReader(clienteRaw.getInputStream(), "UTF-8"));
+                    // Forzar el handshake TLS AHORA, antes de leer nada.
+                    // Sin esto, el handshake es lazy (se dispara en readLine()) y para
+                    // entonces el cliente ya ha rechazado el cert y reseteado la conexión,
+                    // lo que causa SocketException en lugar de SSLHandshakeException.
+                    ((SSLSocket) clienteRaw).startHandshake();
 
-                    // Si llegamos aquí, el cliente ACEPTÓ el certificado falso (MAL)
+                    // Si llegamos aquí, el handshake fue EXITOSO → el cliente ACEPTÓ el cert falso
                     System.out.println("[MitM]  ¡ALERTA! El cliente ACEPTÓ el certificado falso.");
                     System.out.println("[MitM] El TrustStore NO está configurado correctamente.");
+
+                    BufferedReader entrada = new BufferedReader(
+                            new InputStreamReader(clienteRaw.getInputStream(), "UTF-8"));
 
                     String datos = entrada.readLine();
                     if (datos != null) {
                         System.out.println("[MitM] Datos interceptados: " + datos);
                     }
 
-                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + intentos + " desde " + clienteIP + ": ALERTA - Cliente ACEPTÓ certificado falso");
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + intentos + " desde " + clienteIP + ": ALERTA - Cliente ACEPTÓ certificado falso (¡TrustStore mal configurado!)");
                     clienteRaw.close();
 
                 } catch (SSLHandshakeException e) {
@@ -134,13 +139,13 @@ public class PruebaMitM {
                     System.out.println("[MitM] El cliente Java RECHAZÓ el certificado falso.");
                     System.out.println("[MitM] ¡El TrustStore protege contra este ataque MitM!");
                     System.out.println("[MitM]    Detalle: " + e.getMessage());
-                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + (intentos + 1) + ": Handshake FALLIDO (protección MitM OK) - " + e.getMessage());
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + intentos + ": Handshake FALLIDO (protección MitM OK) - " + e.getMessage());
 
                 } catch (IOException e) {
                     System.out.println("[MitM] Conexión rechazada/reseteada por el cliente.");
                     System.out.println("[MitM] ¡Protección MitM funcionando correctamente!");
                     System.out.println("[MitM]    Detalle: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + (intentos + 1) + ": Conexión rechazada (protección MitM OK) - " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                    log.println("[" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + "] Intento #" + intentos + ": Conexión rechazada (protección MitM OK) - " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
 
